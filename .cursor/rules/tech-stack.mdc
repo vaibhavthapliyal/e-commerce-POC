@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Technical Stack
+
+- React and JavaScript for creating the frontend.
+- Java and Spring boot to create microservices.
+- SQL databases, never any file storage or JSON file storage.
+- Unit Test cases in spring boot using Mockito.
+- Unit Test cases for react in Jest.
+
