@@ -1,4 +1,13 @@
 import React from 'react';
+import { 
+  FormControl, 
+  Select, 
+  MenuItem, 
+  InputLabel, 
+  Box, 
+  Typography
+} from '@mui/material';
+import SortIcon from '@mui/icons-material/Sort';
 
 const SortDropdown = ({ onSortChange, currentSort }) => {
   const handleChange = (e) => {
@@ -6,22 +15,27 @@ const SortDropdown = ({ onSortChange, currentSort }) => {
   };
 
   return (
-    <div className="flex items-center">
-      <label htmlFor="sort-select" className="mr-2 text-sm font-medium text-gray-700">
-        Sort by:
-      </label>
-      <select
-        id="sort-select"
-        value={currentSort}
-        onChange={handleChange}
-        className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
-      >
-        <option value="popularity">Popularity</option>
-        <option value="price-low-high">Price: Low to High</option>
-        <option value="price-high-low">Price: High to Low</option>
-        <option value="newest">Newest</option>
-      </select>
-    </div>
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mr: 1.5 }}>
+        <SortIcon color="primary" fontSize="small" sx={{ mr: 0.75 }} />
+        <Typography variant="body2" fontWeight="medium">
+          Sort by:
+        </Typography>
+      </Box>
+      <FormControl size="small" sx={{ minWidth: 170 }}>
+        <Select
+          value={currentSort}
+          onChange={handleChange}
+          displayEmpty
+          sx={{ borderRadius: 2 }}
+        >
+          <MenuItem value="popularity">Popularity</MenuItem>
+          <MenuItem value="price-low-high">Price: Low to High</MenuItem>
+          <MenuItem value="price-high-low">Price: High to Low</MenuItem>
+          <MenuItem value="newest">Newest</MenuItem>
+        </Select>
+      </FormControl>
+    </Box>
   );
 };
 

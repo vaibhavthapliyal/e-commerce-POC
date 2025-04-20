@@ -12,13 +12,24 @@ import Footer from './components/Footer';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#0047AB', // Telecom blue
+      main: '#E91E63', // Magenta as primary color
+      light: '#F48FB1',
+      dark: '#C2185B',
+      contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#FF6B00', // Orange for CTAs
+      main: '#9C27B0', // Purple as secondary color
+      light: '#CE93D8',
+      dark: '#7B1FA2',
+      contrastText: '#FFFFFF',
     },
     background: {
-      default: '#f5f5f5',
+      default: '#FFFFFF',
+      paper: '#FFFFFF',
+    },
+    text: {
+      primary: '#212121',
+      secondary: '#757575',
     },
   },
   typography: {
@@ -53,6 +64,20 @@ const theme = createTheme({
         root: {
           borderRadius: 12,
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontWeight: 500,
         },
       },
     },

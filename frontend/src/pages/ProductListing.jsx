@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { productApi, discountApi } from '../api/api';
 import { addToCart, addCartItem } from '../store/cartSlice';
 import ProductCard from '../components/ProductCard';
@@ -15,11 +16,14 @@ import {
   Alert,
   CircularProgress,
   Pagination,
-  Divider
+  Divider,
+  Chip
 } from '@mui/material';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 
 const ProductListing = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -104,7 +108,7 @@ const ProductListing = () => {
           description: 'Unlimited data, calls and texts. Perfect for heavy users.',
           price: 49.99,
           type: 'tariff',
-          imageUrl: 'https://via.placeholder.com/300x200?text=Unlimited+Plan',
+          dataAllowance: 'Unlimited',
           discountPercentage: 10,
           discountExpiry: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
         },
@@ -115,7 +119,6 @@ const ProductListing = () => {
           price: 999.99,
           type: 'device',
           brand: 'Apple',
-          imageUrl: 'https://via.placeholder.com/300x200?text=iPhone+13+Pro',
         },
         {
           id: 3,
@@ -123,7 +126,7 @@ const ProductListing = () => {
           description: '10GB data with 5G speeds, unlimited calls and texts.',
           price: 29.99,
           type: 'tariff',
-          imageUrl: 'https://via.placeholder.com/300x200?text=5G+Basic+Plan',
+          dataAllowance: '10GB',
         },
         {
           id: 4,
@@ -132,7 +135,6 @@ const ProductListing = () => {
           price: 799.99,
           type: 'device',
           brand: 'Samsung',
-          imageUrl: 'https://via.placeholder.com/300x200?text=Samsung+S21',
           discountPercentage: 15,
           discountExpiry: new Date(Date.now() + 1800000).toISOString(), // 30 minutes from now
         },
@@ -168,6 +170,9 @@ const ProductListing = () => {
     
     // API call to update the cart on the server
     dispatch(addCartItem({ productId: product.id, quantity }));
+    
+    // Navigate to cart page
+    navigate('/cart');
   };
 
   const handleRetry = () => {
@@ -176,95 +181,119 @@ const ProductListing = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" align="center" gutterBottom sx={{ mb: 4, fontWeight: 'bold' }}>
-        Telecom Products
-      </Typography>
-      
-      <Grid container spacing={4}>
-        {/* Filters (left sidebar) */}
-        <Grid item xs={12} md={3}>
-          <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
-            <FilterPanel onFilterChange={handleFilterChange} />
-          </Paper>
-        </Grid>
-        
-        {/* Main content area */}
-        <Grid item xs={12} md={9}>
-          {/* Sort dropdown and product count */}
-          <Box 
+    <Box sx={{ backgroundColor: '#f8f9fa', minHeight: '100vh', py: 6 }}>
+      <Container maxWidth="lg">
+        <Box sx={{ mb: 5, textAlign: 'center' }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
             sx={{ 
-              display: 'flex', 
-              flexDirection: { xs: 'column', sm: 'row' }, 
-              justifyContent: 'space-between',
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              mb: 3
+              fontWeight: 'bold',
+              color: 'primary.main',
+              mb: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
-            <Typography variant="body1" sx={{ mb: { xs: 2, sm: 0 } }}>
-              Showing {products.length} products
-            </Typography>
-            <SortDropdown onSortChange={handleSortChange} currentSort={sort} />
-          </Box>
+            <ShoppingBagIcon sx={{ mr: 1, fontSize: 36 }} />
+            Telecom Products
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mx: 'auto' }}>
+            Browse our selection of premium telecom products, plans, and devices
+          </Typography>
+        </Box>
+        
+        <Grid container spacing={4}>
+          {/* Filters (left sidebar) */}
+          <Grid item xs={12} md={3}>
+            <FilterPanel onFilterChange={handleFilterChange} />
+          </Grid>
           
-          <Divider sx={{ mb: 3 }} />
-          
-          {/* Error message */}
-          {error && (
-            <Alert 
-              severity="error" 
-              sx={{ mb: 3 }}
-              action={
-                <Button color="inherit" size="small" onClick={handleRetry}>
-                  Retry
-                </Button>
-              }
-            >
-              {error}
-            </Alert>
-          )}
-          
-          {/* Loading indicator */}
-          {loading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
-              <CircularProgress />
-            </Box>
-          )}
-          
-          {/* Products grid */}
-          {!loading && products.length === 0 ? (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <Typography variant="body1" color="text.secondary">
-                No products match your filters. Try adjusting your criteria.
-              </Typography>
-            </Box>
-          ) : (
-            <Grid container spacing={3}>
-              {products.map(product => (
-                <Grid item key={product.id} xs={12} sm={6} md={4}>
-                  <ProductCard product={product} onAddToCart={() => handleAddToCart(product)} />
-                </Grid>
-              ))}
-            </Grid>
-          )}
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <Pagination 
-                count={totalPages} 
-                page={currentPage}
-                onChange={handlePageChange}
-                color="primary"
-                size="large"
-                showFirstButton
-                showLastButton
-              />
-            </Box>
-          )}
+          {/* Main content area */}
+          <Grid item xs={12} md={9}>
+            <Paper elevation={3} sx={{ p: 3, borderRadius: 2, mb: 3 }}>
+              {/* Sort dropdown and product count */}
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' }, 
+                  justifyContent: 'space-between',
+                  alignItems: { xs: 'flex-start', sm: 'center' },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, sm: 0 } }}>
+                  <Typography variant="body1" fontWeight="medium" sx={{ mr: 1 }}>
+                    Showing:
+                  </Typography>
+                  <Chip 
+                    label={`${products.length} products`} 
+                    color="primary" 
+                    size="small" 
+                    variant="outlined"
+                  />
+                </Box>
+                <SortDropdown onSortChange={handleSortChange} currentSort={sort} />
+              </Box>
+            </Paper>
+            
+            {/* Error message */}
+            {error && (
+              <Alert 
+                severity="error" 
+                sx={{ mb: 3 }}
+                action={
+                  <Button color="inherit" size="small" onClick={handleRetry}>
+                    Retry
+                  </Button>
+                }
+              >
+                {error}
+              </Alert>
+            )}
+            
+            {/* Loading indicator */}
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', my: 8 }}>
+                <CircularProgress color="primary" />
+              </Box>
+            )}
+            
+            {/* Products grid */}
+            {!loading && products.length === 0 ? (
+              <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 2 }}>
+                <Typography variant="body1" color="text.secondary">
+                  No products match your filters. Try adjusting your criteria.
+                </Typography>
+              </Paper>
+            ) : (
+              <Grid container spacing={3}>
+                {products.map(product => (
+                  <Grid item key={product.id} xs={12} sm={6} md={4}>
+                    <ProductCard product={product} onAddToCart={() => handleAddToCart(product)} />
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Pagination 
+                  count={totalPages} 
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="large"
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
+            )}
+          </Grid>
         </Grid>
-      </Grid>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

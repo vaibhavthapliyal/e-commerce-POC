@@ -1,4 +1,22 @@
 import React, { useState } from 'react';
+import {
+  Typography,
+  Box,
+  Slider,
+  FormControl,
+  Select,
+  MenuItem,
+  Button,
+  Divider,
+  Chip,
+  InputLabel,
+  Paper
+} from '@mui/material';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import DevicesIcon from '@mui/icons-material/Devices';
+import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
+import DataUsageIcon from '@mui/icons-material/DataUsage';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 
 const FilterPanel = ({ onFilterChange }) => {
   const [filters, setFilters] = useState({
@@ -17,12 +35,12 @@ const FilterPanel = ({ onFilterChange }) => {
     onFilterChange(newFilters);
   };
 
-  const handlePriceChange = (e) => {
+  const handlePriceChange = (event, newValue) => {
     const newFilters = { 
       ...filters, 
       priceRange: [
         filters.priceRange[0],
-        parseInt(e.target.value, 10)
+        newValue
       ] 
     };
     setFilters(newFilters);
@@ -58,85 +76,186 @@ const FilterPanel = ({ onFilterChange }) => {
     onFilterChange(resetFilters);
   };
 
+  // Format price as currency
+  const valueLabelFormat = (value) => {
+    return `$${value}`;
+  };
+
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md">
-      <h2 className="text-lg font-semibold mb-4">Filters</h2>
+    <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <FilterAltIcon color="primary" sx={{ mr: 1.5 }} />
+        <Typography variant="h6" fontWeight="medium">
+          Filters
+        </Typography>
+      </Box>
       
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Category
-        </label>
-        <select
-          value={filters.category}
-          onChange={handleCategoryChange}
-          className="block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
+      <Divider sx={{ mb: 3 }} />
+      
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+          <DevicesIcon color="primary" fontSize="small" sx={{ mr: 1 }} />
+          <Typography variant="subtitle1" fontWeight="medium">
+            Category
+          </Typography>
+        </Box>
+        <FormControl fullWidth size="small">
+          <Select
+            value={filters.category}
+            onChange={handleCategoryChange}
+            displayEmpty
+            sx={{ borderRadius: 2 }}
+          >
+            <MenuItem value="all">All Products</MenuItem>
+            <MenuItem value="tariff">Tariffs</MenuItem>
+            <MenuItem value="device">Devices</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+      
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+          <AttachMoneyIcon color="primary" fontSize="small" sx={{ mr: 1 }} />
+          <Typography variant="subtitle1" fontWeight="medium">
+            Maximum Price
+          </Typography>
+        </Box>
+        <Box sx={{ px: 1 }}>
+          <Typography variant="body1" color="primary" align="right" sx={{ fontWeight: 'medium', mb: 1 }}>
+            {valueLabelFormat(filters.priceRange[1])}
+          </Typography>
+          <Slider
+            value={filters.priceRange[1]}
+            onChange={handlePriceChange}
+            min={0}
+            max={1000}
+            step={50}
+            valueLabelDisplay="auto"
+            valueLabelFormat={valueLabelFormat}
+            color="primary"
+            sx={{ 
+              '& .MuiSlider-thumb': {
+                width: 16,
+                height: 16,
+              }
+            }}
+          />
+        </Box>
+      </Box>
+      
+      {(filters.category === 'tariff' || filters.category === 'all') && (
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+            <DataUsageIcon color="primary" fontSize="small" sx={{ mr: 1 }} />
+            <Typography variant="subtitle1" fontWeight="medium">
+              Data Allowance
+            </Typography>
+          </Box>
+          <FormControl fullWidth size="small">
+            <Select
+              value={filters.dataAllowance}
+              onChange={handleDataAllowanceChange}
+              displayEmpty
+              sx={{ borderRadius: 2 }}
+            >
+              <MenuItem value="all">All Data Plans</MenuItem>
+              <MenuItem value="1GB">1GB</MenuItem>
+              <MenuItem value="5GB">5GB</MenuItem>
+              <MenuItem value="10GB">10GB</MenuItem>
+              <MenuItem value="Unlimited">Unlimited</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      )}
+      
+      {(filters.category === 'device' || filters.category === 'all') && (
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+            <PhoneIphoneIcon color="primary" fontSize="small" sx={{ mr: 1 }} />
+            <Typography variant="subtitle1" fontWeight="medium">
+              Brand
+            </Typography>
+          </Box>
+          <FormControl fullWidth size="small">
+            <Select
+              value={filters.brand}
+              onChange={handleBrandChange}
+              displayEmpty
+              sx={{ borderRadius: 2 }}
+            >
+              <MenuItem value="all">All Brands</MenuItem>
+              <MenuItem value="Apple">Apple</MenuItem>
+              <MenuItem value="Samsung">Samsung</MenuItem>
+              <MenuItem value="Google">Google</MenuItem>
+              <MenuItem value="Huawei">Huawei</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      )}
+      
+      <Box sx={{ mt: 4 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+          {filters.category !== 'all' && (
+            <Chip 
+              label={`Category: ${filters.category === 'tariff' ? 'Tariffs' : 'Devices'}`}
+              size="small"
+              color="primary"
+              onDelete={() => {
+                const newFilters = { ...filters, category: 'all' };
+                setFilters(newFilters);
+                onFilterChange(newFilters);
+              }}
+            />
+          )}
+          {filters.priceRange[1] < 1000 && (
+            <Chip 
+              label={`Max Price: ${valueLabelFormat(filters.priceRange[1])}`}
+              size="small"
+              color="primary"
+              onDelete={() => {
+                const newFilters = { ...filters, priceRange: [0, 1000] };
+                setFilters(newFilters);
+                onFilterChange(newFilters);
+              }}
+            />
+          )}
+          {filters.dataAllowance !== 'all' && (
+            <Chip 
+              label={`Data: ${filters.dataAllowance}`}
+              size="small"
+              color="primary"
+              onDelete={() => {
+                const newFilters = { ...filters, dataAllowance: 'all' };
+                setFilters(newFilters);
+                onFilterChange(newFilters);
+              }}
+            />
+          )}
+          {filters.brand !== 'all' && (
+            <Chip 
+              label={`Brand: ${filters.brand}`}
+              size="small"
+              color="primary"
+              onDelete={() => {
+                const newFilters = { ...filters, brand: 'all' };
+                setFilters(newFilters);
+                onFilterChange(newFilters);
+              }}
+            />
+          )}
+        </Box>
+        
+        <Button
+          variant="outlined"
+          color="primary"
+          fullWidth
+          onClick={handleReset}
+          sx={{ borderRadius: 2 }}
         >
-          <option value="all">All Products</option>
-          <option value="tariff">Tariffs</option>
-          <option value="device">Devices</option>
-        </select>
-      </div>
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Max Price: ${filters.priceRange[1]}
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="1000"
-          step="50"
-          value={filters.priceRange[1]}
-          onChange={handlePriceChange}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-        />
-      </div>
-      
-      {filters.category === 'tariff' || filters.category === 'all' ? (
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Data Allowance
-          </label>
-          <select
-            value={filters.dataAllowance}
-            onChange={handleDataAllowanceChange}
-            className="block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
-          >
-            <option value="all">All Data Plans</option>
-            <option value="1GB">1GB</option>
-            <option value="5GB">5GB</option>
-            <option value="10GB">10GB</option>
-            <option value="Unlimited">Unlimited</option>
-          </select>
-        </div>
-      ) : null}
-      
-      {filters.category === 'device' || filters.category === 'all' ? (
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Brand
-          </label>
-          <select
-            value={filters.brand}
-            onChange={handleBrandChange}
-            className="block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
-          >
-            <option value="all">All Brands</option>
-            <option value="Apple">Apple</option>
-            <option value="Samsung">Samsung</option>
-            <option value="Google">Google</option>
-            <option value="Huawei">Huawei</option>
-          </select>
-        </div>
-      ) : null}
-      
-      <button
-        onClick={handleReset}
-        className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded transition duration-300"
-      >
-        Reset Filters
-      </button>
-    </div>
+          Reset All Filters
+        </Button>
+      </Box>
+    </Paper>
   );
 };
 

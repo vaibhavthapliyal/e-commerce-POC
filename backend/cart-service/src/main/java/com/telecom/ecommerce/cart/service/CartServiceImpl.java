@@ -1,5 +1,6 @@
 package com.telecom.ecommerce.cart.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.telecom.ecommerce.cart.client.ProductServiceClient;
 import com.telecom.ecommerce.cart.dto.CartResponse;
 import com.telecom.ecommerce.cart.dto.ProductDto;
@@ -17,6 +18,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +32,7 @@ public class CartServiceImpl implements CartService {
     private static final Logger log = LoggerFactory.getLogger(CartServiceImpl.class);
     private final RedisTemplate<String, Object> redisTemplate;
     private final ProductServiceClient productServiceClient;
+    private final ObjectMapper objectMapper;
     
     private static final String CART_KEY_PREFIX = "cart:";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
@@ -36,15 +41,34 @@ public class CartServiceImpl implements CartService {
     private int cartExpirationHours;
     
     @Autowired
-    public CartServiceImpl(RedisTemplate<String, Object> redisTemplate, ProductServiceClient productServiceClient) {
+    public CartServiceImpl(RedisTemplate<String, Object> redisTemplate, ProductServiceClient productServiceClient, ObjectMapper objectMapper) {
         this.redisTemplate = redisTemplate;
         this.productServiceClient = productServiceClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
     public Cart getCart(String cartId) {
         String key = CART_KEY_PREFIX + cartId;
-        Cart cart = (Cart) redisTemplate.opsForValue().get(key);
+        Object rawCart = redisTemplate.opsForValue().get(key);
+        
+        Cart cart = null;
+        if (rawCart != null) {
+            if (rawCart instanceof Cart) {
+                cart = (Cart) rawCart;
+            } else if (rawCart instanceof LinkedHashMap) {
+                // Convert LinkedHashMap to Cart
+                try {
+                    // Convert the map to JSON and then to Cart object
+                    cart = objectMapper.convertValue(rawCart, Cart.class);
+                } catch (Exception e) {
+                    log.error("Error converting LinkedHashMap to Cart: {}", e.getMessage());
+                    cart = null;
+                }
+            } else {
+                log.error("Unknown object type returned from Redis: {}", rawCart.getClass().getName());
+            }
+        }
         
         if (cart == null) {
             cart = createNewCart(cartId);

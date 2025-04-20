@@ -89,6 +89,28 @@ export const productApi = {
   },
 };
 
+// Helper function to get cart from localStorage
+const getLocalCart = () => {
+  try {
+    const localCart = localStorage.getItem('cart');
+    if (localCart) {
+      return JSON.parse(localCart);
+    }
+  } catch (e) {
+    console.error('Error retrieving cart from localStorage:', e);
+  }
+  return { items: [], total: 0 };
+};
+
+// Helper function to save cart to localStorage
+const saveLocalCart = (cart) => {
+  try {
+    localStorage.setItem('cart', JSON.stringify(cart));
+  } catch (e) {
+    console.error('Error saving cart to localStorage:', e);
+  }
+};
+
 // Cart Service API
 export const cartApi = {
   addToCart: async (productId, quantity) => {
@@ -97,7 +119,50 @@ export const cartApi = {
       return response.data;
     } catch (error) {
       console.error('Error adding to cart:', error);
-      throw error;
+      
+      // Implement local fallback solution
+      console.log('Using local cart fallback for add operation');
+      
+      // Get product details
+      let product;
+      try {
+        product = await productApi.getProductById(productId);
+      } catch (err) {
+        // If we can't get the product, use a minimal version with just the ID
+        product = { id: productId, name: "Product ID " + productId, price: 0 };
+        console.warn('Using minimal product info due to API error:', err);
+      }
+      
+      // Use local storage as fallback
+      const localCart = getLocalCart();
+      
+      // Check if product already exists in cart
+      const existingItemIndex = localCart.items.findIndex(item => item.id === productId);
+      
+      if (existingItemIndex >= 0) {
+        // Update existing item
+        localCart.items[existingItemIndex].quantity += quantity;
+      } else {
+        // Add new item
+        localCart.items.push({
+          ...product,
+          quantity: quantity
+        });
+      }
+      
+      // Calculate new total
+      localCart.total = localCart.items.reduce((sum, item) => {
+        const price = item.discountPercentage 
+          ? item.price * (1 - (item.discountPercentage / 100)) 
+          : item.price;
+        return sum + (price * item.quantity);
+      }, 0);
+      
+      // Save updated cart
+      saveLocalCart(localCart);
+      
+      // Return the local cart data in the same format as the API would
+      return localCart;
     }
   },
   
@@ -107,7 +172,10 @@ export const cartApi = {
       return response.data;
     } catch (error) {
       console.error('Error fetching cart:', error);
-      throw error;
+      
+      // Return local cart as fallback
+      console.log('Using local cart fallback for get operation');
+      return getLocalCart();
     }
   },
   
@@ -117,7 +185,36 @@ export const cartApi = {
       return response.data;
     } catch (error) {
       console.error('Error updating cart:', error);
-      throw error;
+      
+      // Implement local fallback
+      console.log('Using local cart fallback for update operation');
+      const localCart = getLocalCart();
+      
+      // Find and update the item
+      const itemIndex = localCart.items.findIndex(item => item.id === productId);
+      
+      if (itemIndex >= 0) {
+        if (quantity <= 0) {
+          // Remove item if quantity is 0 or negative
+          localCart.items.splice(itemIndex, 1);
+        } else {
+          // Update quantity
+          localCart.items[itemIndex].quantity = quantity;
+        }
+        
+        // Recalculate total
+        localCart.total = localCart.items.reduce((sum, item) => {
+          const price = item.discountPercentage 
+            ? item.price * (1 - (item.discountPercentage / 100)) 
+            : item.price;
+          return sum + (price * item.quantity);
+        }, 0);
+        
+        // Save updated cart
+        saveLocalCart(localCart);
+      }
+      
+      return localCart;
     }
   },
   
@@ -129,7 +226,26 @@ export const cartApi = {
       return response.data;
     } catch (error) {
       console.error('Error removing from cart:', error);
-      throw error;
+      
+      // Implement local fallback
+      console.log('Using local cart fallback for remove operation');
+      const localCart = getLocalCart();
+      
+      // Remove the item
+      localCart.items = localCart.items.filter(item => item.id !== productId);
+      
+      // Recalculate total
+      localCart.total = localCart.items.reduce((sum, item) => {
+        const price = item.discountPercentage 
+          ? item.price * (1 - (item.discountPercentage / 100)) 
+          : item.price;
+        return sum + (price * item.quantity);
+      }, 0);
+      
+      // Save updated cart
+      saveLocalCart(localCart);
+      
+      return localCart;
     }
   },
 
@@ -139,7 +255,12 @@ export const cartApi = {
       return response.data;
     } catch (error) {
       console.error('Error clearing cart:', error);
-      throw error;
+      
+      // Implement local fallback
+      console.log('Using local cart fallback for clear operation');
+      localStorage.removeItem('cart');
+      
+      return { items: [], total: 0 };
     }
   },
 };
@@ -156,12 +277,12 @@ export const discountApi = {
     }
   },
   
-  getDiscountByProductId: async (productId) => {
+  getDiscountsByProductId: async (productId) => {
     try {
       const response = await discountClient.get(`/product/${productId}`);
       return response.data;
     } catch (error) {
-      console.error(`Error fetching discount for product ${productId}:`, error);
+      console.error(`Error fetching discounts for product ${productId}:`, error);
       throw error;
     }
   },
