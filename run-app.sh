@@ -34,6 +34,12 @@ cleanup() {
         brew services stop zookeeper
     fi
     
+    # Stop Redis if started via Homebrew
+    if [ "$BREW_REDIS_STARTED" = true ]; then
+        echo -e "${YELLOW}Stopping Redis via Homebrew...${NC}"
+        brew services stop redis
+    fi
+    
     # If on macOS, send Ctrl+C to all Terminal windows we opened
     if [[ "$OSTYPE" == "darwin"* ]] && [ ${#STARTED_SERVICES[@]} -gt 0 ]; then
         echo -e "${YELLOW}Attempting to close service terminals...${NC}"
@@ -277,6 +283,43 @@ else
     fi
 fi
 
+# Check Redis
+if command_exists redis-cli; then
+    REDIS_VERSION=$(redis-cli --version | awk '{print $2}')
+    echo -e "${GREEN}✓ Redis is installed (version $REDIS_VERSION)${NC}"
+else
+    echo -e "${RED}✗ Redis is not installed.${NC}"
+    read -p "Would you like to install Redis? (yes/no): " INSTALL_REDIS
+    
+    if [[ "$INSTALL_REDIS" == "yes" ]]; then
+        case $OS_TYPE in
+            "macOS")
+                install_package "redis-cli" "brew install redis"
+                ;;
+            "Ubuntu/Debian")
+                sudo apt-get update
+                install_package "redis-cli" "sudo apt-get install -y redis-server"
+                # Start Redis service
+                sudo systemctl start redis-server
+                sudo systemctl enable redis-server
+                ;;
+            "Fedora/RHEL")
+                install_package "redis-cli" "sudo dnf install -y redis"
+                # Start Redis service
+                sudo systemctl start redis
+                sudo systemctl enable redis
+                ;;
+            *)
+                echo -e "${RED}Automatic installation not supported for your OS. Please install Redis manually.${NC}"
+                exit 1
+                ;;
+        esac
+    else
+        echo -e "${RED}Redis is required for the backend services. Exiting...${NC}"
+        exit 1
+    fi
+fi
+
 # Setup PostgreSQL databases
 echo -e "\n${YELLOW}Setting up PostgreSQL databases...${NC}"
 
@@ -474,6 +517,40 @@ start_service() {
         echo -e "${YELLOW}$WRAPPED_CMD${NC}"
     fi
 }
+
+# Start Redis
+echo -e "${YELLOW}Starting Redis...${NC}"
+if [[ "$OSTYPE" == "darwin"* ]] && command_exists brew; then
+    # For macOS with Homebrew
+    brew services start redis
+    BREW_REDIS_STARTED=true
+    echo -e "${GREEN}✓ Redis started via Homebrew${NC}"
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # For Linux
+    if command_exists systemctl; then
+        sudo systemctl start redis-server || sudo systemctl start redis
+        echo -e "${GREEN}✓ Redis started via systemd${NC}"
+    else
+        # Fallback to direct command
+        redis-server &
+        BACKGROUND_PIDS+=($!)
+        echo -e "${GREEN}✓ Redis started in background${NC}"
+    fi
+else
+    # Fallback for other systems
+    redis-server &
+    BACKGROUND_PIDS+=($!)
+    echo -e "${GREEN}✓ Redis started in background${NC}"
+fi
+
+# Wait for Redis to be ready
+echo -e "${YELLOW}Waiting for Redis to be ready...${NC}"
+sleep 3
+if redis-cli ping &>/dev/null; then
+    echo -e "${GREEN}✓ Redis is running and responding${NC}"
+else
+    echo -e "${RED}✗ Redis is not responding. The application might not work correctly.${NC}"
+fi
 
 # Start Kafka if we have it
 if [[ -n "$KAFKA_DIR" ]]; then
